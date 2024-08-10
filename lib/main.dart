@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:gismite/pages/createpost.dart';
 import 'package:gismite/pages/map_page.dart';
 import 'package:gismite/pages/msginfo.dart';
 // import 'package:supabase_flutter/supabase_flutter.dart';
@@ -47,7 +48,7 @@ class MyApp extends StatelessWidget {
       ),
       themeMode: ThemeMode
           .system, // Automatically switch themes based on system settings
-      home: MsgInboxAlerts(),
+      home: CreatePost(),
       routes: {
         '/message_info': (context) => const MessageInfo(),
       },
