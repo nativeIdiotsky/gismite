@@ -6,6 +6,7 @@ import 'package:gismite/pages/msginfo.dart';
 // import 'package:gismite/pages/account_page.dart';
 // import 'package:gismite/pages/login_page.dart';
 import 'package:gismite/pages/msginboxalerts.dart';
+import 'package:gismite/pages/posts.dart';
 
 Future<void> main() async {
   // await Supabase.initialize(
@@ -48,7 +49,7 @@ class MyApp extends StatelessWidget {
       ),
       themeMode: ThemeMode
           .system, // Automatically switch themes based on system settings
-      home: CreatePost(),
+      home: const Posts(),
       routes: {
         '/message_info': (context) => const MessageInfo(),
       },
