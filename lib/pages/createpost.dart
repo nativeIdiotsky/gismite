@@ -42,75 +42,77 @@ class _BodyFormState extends State<BodyForm> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        Center(
-          child: _image == null
-              ? const Text('No image selected.')
-              : Image.file(_image!, height: 200),
-        ),
-        Center(
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              ElevatedButton(
-                onPressed: () => _pickImage(ImageSource.camera),
-                child: const Text('Take Photo'),
-              ),
-              const SizedBox(width: 16),
-              ElevatedButton(
-                onPressed: () => _pickImage(ImageSource.gallery),
-                child: const Text('Choose from Gallery'),
-              ),
-            ],
+    return ListView(children: [
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Center(
+            child: _image == null
+                ? const Text('No image selected.')
+                : Image.file(_image!, height: 200),
           ),
-        ),
-        const Center(
-          child: Text('GPS MAP'),
-        ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(
-              minHeight: 50.0, // minimum height
-              maxHeight: 200.0, // maximum height
+          Center(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ElevatedButton(
+                  onPressed: () => _pickImage(ImageSource.camera),
+                  child: const Text('Take Photo'),
+                ),
+                const SizedBox(width: 16),
+                ElevatedButton(
+                  onPressed: () => _pickImage(ImageSource.gallery),
+                  child: const Text('Choose from Gallery'),
+                ),
+              ],
             ),
-            child: Scrollbar(
-              child: SingleChildScrollView(
-                scrollDirection: Axis.vertical,
-                reverse: true,
-                child: TextField(
-                  controller: _controller,
-                  keyboardType: TextInputType.multiline,
-                  maxLines: null, // no limit on number of lines
-                  decoration: const InputDecoration(
-                    border: OutlineInputBorder(),
-                    hintText: 'Type something here...',
+          ),
+          const Center(
+            child: Text('GPS MAP'),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(
+                minHeight: 50.0, // minimum height
+                maxHeight: 200.0, // maximum height
+              ),
+              child: Scrollbar(
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.vertical,
+                  reverse: true,
+                  child: TextField(
+                    controller: _controller,
+                    keyboardType: TextInputType.multiline,
+                    maxLines: null, // no limit on number of lines
+                    decoration: const InputDecoration(
+                      border: OutlineInputBorder(),
+                      hintText: 'Type something here...',
+                    ),
                   ),
                 ),
               ),
             ),
           ),
-        ),
-        Center(
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Padding(
-                padding: EdgeInsets.all(2),
-                child:
-                    ElevatedButton(onPressed: () => (), child: Text('Submit')),
-              ),
-              Padding(
-                padding: EdgeInsets.all(2),
-                child:
-                    ElevatedButton(onPressed: () => (), child: Text('Cancel')),
-              )
-            ],
+          Center(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Padding(
+                  padding: EdgeInsets.all(2),
+                  child: ElevatedButton(
+                      onPressed: () => (), child: Text('Submit')),
+                ),
+                Padding(
+                  padding: EdgeInsets.all(2),
+                  child: ElevatedButton(
+                      onPressed: () => (), child: Text('Cancel')),
+                )
+              ],
+            ),
           ),
-        ),
-      ],
-    );
+        ],
+      ),
+    ]);
   }
 }

@@ -49,7 +49,7 @@ class MyApp extends StatelessWidget {
       ),
       themeMode: ThemeMode
           .system, // Automatically switch themes based on system settings
-      home: const Posts(),
+      home: const CreatePost(),
       routes: {
         '/message_info': (context) => const MessageInfo(),
       },
