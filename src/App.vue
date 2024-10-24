@@ -1,41 +1,46 @@
 <template>
   <div id="app">
+    <!-- You can uncomment the navigation if needed -->
+    <!-- 
     <nav class="bg-gray-800 text-white p-4">
       <h1 class="text-lg">GISMITE Admin</h1>
       <div class="space-x-4">
-        <button @click="currentView = 'dashboard'" class="bg-blue-500 px-4 py-2 rounded">
+        <router-link to="/" class="bg-blue-500 px-4 py-2 rounded">
           Dashboard
-        </button>
-        <button @click="currentView = 'login'" class="bg-green-500 px-4 py-2 rounded">
+        </router-link>
+        <router-link to="/login" class="bg-green-500 px-4 py-2 rounded">
           Login
-        </button>
+        </router-link>
+        <router-link to="/adminregister" class="bg-yellow-500 px-4 py-2 rounded">
+          Register
+        </router-link>
       </div>
-    </nav>
+    </nav> 
+    -->
     <div class="p-4">
-      <component :is="currentViewComponent" />
+      <!-- Displays the component corresponding to the matched route -->
+      <router-view />
+    <!--MapView /--> 
     </div>
   </div>
 </template>
 
 <script>
-import AdminDashboard from './components/AdminDashboard.vue';
-import LoginPage from './components/LoginPage.vue';
+// Import the MapComponent from the components folder
+//import MapView from './components/MapView.vue';
 
 export default {
   name: "App",
-  data() {
-    return {
-      currentView: 'dashboard' // Set initial view
-    };
-  },
-  computed: {
-    currentViewComponent() {
-      return this.currentView === 'dashboard' ? AdminDashboard : LoginPage;
-    }
+  components: {
+    //MapView
   }
 };
 </script>
 
 <style scoped>
+#app {
+  height: 100vh;
+  margin: 0;
+}
 /* Add any additional custom styles here if needed */
 </style>
