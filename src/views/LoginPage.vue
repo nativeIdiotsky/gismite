@@ -51,20 +51,6 @@
           readonly 
         ></textarea>
       </div>
-
-      <!-- Container for Displaying All Records -->
-      <div class="mt-6">
-        <h3 class="text-lg font-bold text-center mb-4">Registered Users</h3>
-        <div v-if="users.length > 0" class="space-y-2">
-          <div v-for="user in users" :key="user.user_id" class="p-4 bg-white rounded shadow-md">
-            <p><strong>Username:</strong> {{ user.username }}</p>
-            <p><strong>First Name:</strong> {{ user.firstname }}</p>
-            <p><strong>Last Name:</strong> {{ user.lastname }}</p>
-            <p><strong>Email:</strong> {{ user.email }}</p>
-          </div>
-        </div>
-        <p v-else class="text-center text-gray-600">No registered users found.</p>
-      </div>
     </div>
   </div>
 </template>
@@ -80,40 +66,34 @@ export default {
       password: '',
       loading: false,
       errorMessage: '',
-      debugConsole: '', // Used for logging debugging information
-      users: [] // To store the list of registered users
+      debugConsole: '',
     };
   },
-  mounted() {
-    this.fetchAllUsers(); // Fetch all users when the component is mounted
-  },
+ 
   methods: {
     async handleLogin() {
-      this.errorMessage = ''; // Clear any previous error messages
-      this.debugConsole = ''; // Clear previous debug logs
-      
+      this.errorMessage = '';
+      this.debugConsole = '';
+
       try {
         this.loading = true;
         this.debugConsole += `Querying for email: ${this.email}\n`;
 
-        // Query the registered_users table via Supabase REST API for the user with the provided email
+        // Query the registered_users table for the user with the provided email
         const { data, error } = await supabase
           .from('registered_users')
           .select('email, userpassw')
-          .eq('email', this.email);
-            this.debugConsole += `Supabase response data: ${JSON.stringify(data)}\n`;
-            this.debugConsole += `Supabase error: ${error ? error.message : '...'}\n`;
-
+          .eq('email', this.email)
+          .single(); // `.single()` to fetch a single row instead of an array
 
         // Log data and error to the debug console
-        this.debugConsole += `Email Query Result: ${data ? data.email : 'No data'}\n`;
-        this.debugConsole += `Stored Password: ${data ? data.userpassw : 'No password found'}\n`;
-        this.debugConsole += `Input Password: ${this.password}\n`;
+        this.debugConsole += `Supabase response data: ${JSON.stringify(data)}\n`;
+        this.debugConsole += `Supabase error: ${error ? error.message : 'No error'}\n`;
 
-        // Check for query error or no matching user
+        // Check for error or no matching user
         if (error || !data) {
           this.errorMessage = 'Invalid email or password';
-          this.debugConsole += `Error: ${error.message || 'User not found'}\n`;
+          this.debugConsole += `Error: ${error ? error.message : 'User not found'}\n`;
           return;
         }
 
@@ -122,19 +102,7 @@ export default {
           this.errorMessage = 'Invalid email or password';
           this.debugConsole += 'Password mismatch.\n';
           return;
-        } 
-        if (error || data.length === 0) {
-      this.errorMessage = 'Invalid email or password';
-      this.debugConsole += `Error: ${error ? error.message : 'No matching user found'}\n`;
-      return;
-    }
-
-    // Verify if the input password matches the stored password
-    if (data[0].userpassw !== this.password) {
-      this.errorMessage = 'Invalid email or password';
-      this.debugConsole += 'Password mismatch.\n';
-      return;
-    }
+        }
 
         // If login is successful, redirect to the home page
         this.$router.push('/');
@@ -145,21 +113,6 @@ export default {
         console.error('Login error:', error);
       } finally {
         this.loading = false;
-      }
-    },
-    async fetchAllUsers() {
-      try {
-        const { data, error } = await supabase
-          .from('registered_users')
-          .select();
-        
-        if (error) {
-          console.error('Error fetching users:', error);
-        } else {
-          this.users = data; // Assign the fetched users to the `users` array
-        }
-      } catch (error) {
-        console.error('Error fetching all users:', error);
       }
     },
   },
