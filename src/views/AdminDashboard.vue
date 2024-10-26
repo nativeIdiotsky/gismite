@@ -1,5 +1,10 @@
 <template>
-  <div class="dashboard">
+  <div class="dashboard relative">
+    <!-- Logout Button -->
+    <div class="absolute top-4 right-4">
+      <button @click="handleLogout" class="bg-red-500 text-white px-4 py-2 rounded">Logout</button>
+    </div>
+
     <h1 class="text-2xl font-bold mb-4">Welcome to the Jade Valley Monitoring System</h1>
     <p class="mb-4">This application helps you monitor flood conditions in real-time.</p>
     <div class="grid grid-cols-1 gap-4">
@@ -46,17 +51,66 @@
 <script>
 export default {
   name: "AdminDashboard",
+  data() {
+    return {
+      inactivityTimer: null,
+    };
+  },
+
+  mounted() {
+    // Check if session is still active
+    const session = localStorage.getItem('userSession');
+    if (!session) {
+      // Redirect to login if session doesn't exist
+      this.$router.push('/login');
+    } else {
+      this.startInactivityTimer();
+    }
+
+    // Listen for any user activity to reset the inactivity timer
+    window.addEventListener('mousemove', this.resetInactivityTimer);
+    window.addEventListener('keydown', this.resetInactivityTimer);
+  },
+
+  beforeUnmount() {
+    // Cleanup listeners and timers when component is destroyed
+    window.removeEventListener('mousemove', this.resetInactivityTimer);
+    window.removeEventListener('keydown', this.resetInactivityTimer);
+    clearTimeout(this.inactivityTimer);
+  },
+
   methods: {
+    handleLogout() {
+      this.endSession();
+      this.$router.push('/login');
+    },
+
+    startInactivityTimer() {
+      clearTimeout(this.inactivityTimer);
+      this.inactivityTimer = setTimeout(() => {
+        this.endSession();
+        this.$router.push('/login');
+      }, 5 * 60 * 1000); //  minutes inactivity timeout
+    },
+
+    resetInactivityTimer() {
+      this.startInactivityTimer();
+    },
+
+    endSession() {
+      localStorage.removeItem('userSession');
+      clearTimeout(this.inactivityTimer);
+    },
+
     goToInbox() {
-      // Navigate to the inbox page
       this.$router.push('/inbox');
     },
+
     goToMap() {
-      // Navigate to the Jade Valley Map page
       this.$router.push('/osm');
     },
+
     goToCrowdsourcing() {
-      // Navigate to the crowdsourcing posts management page
       this.$router.push('/crowdsourcing');
     },
   },
@@ -65,7 +119,6 @@ export default {
 
 <style scoped>
 .dashboard {
-
   text-align: center;
 }
 

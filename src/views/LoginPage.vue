@@ -2,8 +2,14 @@
   <div class="flex items-center justify-center min-h-screen w-full h-full bg-gray-100 text-gray-900">
     <div class="w-full p-8 max-w-md">
       <h2 class="text-2xl font-bold mb-6 text-center">Jade Valley Monitoring System</h2>
-      <h2 class="text-xl font-bold mb-4 text-center">Login</h2>
-      <form @submit.prevent="handleLogin">
+      
+     
+      
+
+      <h2 v-if="!isLoggedIn" class="text-xl font-bold mb-4 text-center">Login</h2>
+
+      <!-- Login Form -->
+      <form v-if="!isLoggedIn" @submit.prevent="handleLogin">
         <div class="mb-4">
           <label for="email" class="block text-sm font-medium">Email</label>
           <input
@@ -36,7 +42,8 @@
 
         <p v-if="errorMessage" class="text-red-500 text-center mt-4">{{ errorMessage }}</p>
       </form>
-      <div class="mt-4 text-center">
+
+      <div class="mt-4 text-center" v-if="!isLoggedIn">
         <p>Don't have an account? <router-link to="/adminregister" class="text-blue-500 hover:underline">Register here</router-link>.</p>
       </div>
 
@@ -67,9 +74,20 @@ export default {
       loading: false,
       errorMessage: '',
       debugConsole: '',
+      inactivityTimer: null,
+      isLoggedIn: false,
     };
   },
- 
+
+  mounted() {
+    // Check if user session exists in localStorage on mount
+    const session = localStorage.getItem('userSession');
+    if (session) {
+      this.isLoggedIn = true;
+      this.startInactivityTimer();
+    }
+  },
+
   methods: {
     async handleLogin() {
       this.errorMessage = '';
@@ -86,26 +104,33 @@ export default {
           .eq('email', this.email)
           .single(); // `.single()` to fetch a single row instead of an array
 
-        // Log data and error to the debug console
-        this.debugConsole += `Supabase response data: ${JSON.stringify(data)}\n`;
-        this.debugConsole += `Supabase error: ${error ? error.message : 'No error'}\n`;
-
-        // Check for error or no matching user
         if (error || !data) {
           this.errorMessage = 'Invalid email or password';
           this.debugConsole += `Error: ${error ? error.message : 'User not found'}\n`;
           return;
         }
 
-        // Verify if the input password matches the stored password
         if (data.userpassw !== this.password) {
           this.errorMessage = 'Invalid email or password';
           this.debugConsole += 'Password mismatch.\n';
           return;
         }
 
-        // If login is successful, redirect to the home page
-        this.$router.push('/');
+        // Store session and start inactivity timer
+        localStorage.setItem('userSession', JSON.stringify({ email: this.email, timestamp: Date.now() }));
+        this.isLoggedIn = true;
+        this.debugConsole += `Access granted...\n`;
+
+        for (let i = 3; i > 0; i--) {
+          setTimeout(() => {
+            this.debugConsole += `Redirecting in ${i} seconds...\n`;
+          }, (3 - i) * 1000);
+        }
+
+        setTimeout(() => {
+          this.$router.push('/');
+          this.startInactivityTimer();
+        }, 3000);
         
       } catch (error) {
         this.errorMessage = 'An error occurred during login. Please try again.';
@@ -115,7 +140,43 @@ export default {
         this.loading = false;
       }
     },
+
+    handleLogout() {
+      this.endSession();
+      this.debugConsole += 'Logged out successfully.\n';
+      this.$router.push('/login');
+    },
+
+    startInactivityTimer() {
+      // Clear existing timer if any
+      clearTimeout(this.inactivityTimer);
+
+      // Set a 2-minute inactivity timer
+      this.inactivityTimer = setTimeout(() => {
+        this.endSession();
+        this.debugConsole += 'Session ended due to inactivity.\n';
+        this.$router.push('/login');
+      }, 2 * 60 * 1000);
+    },
+
+    resetInactivityTimer() {
+      if (this.isLoggedIn) {
+        this.startInactivityTimer();
+      }
+    },
+
+    endSession() {
+      localStorage.removeItem('userSession');
+      this.isLoggedIn = false;
+      clearTimeout(this.inactivityTimer);
+    },
   },
+
+  watch: {
+    // Reset inactivity timer on any interaction (e.g., typing email or password)
+    email: 'resetInactivityTimer',
+    password: 'resetInactivityTimer',
+  }
 };
 </script>
 
