@@ -2,9 +2,6 @@
   <div class="flex items-center justify-center min-h-screen w-full h-full bg-gray-100 text-gray-900">
     <div class="w-full p-8 max-w-md">
       <h2 class="text-2xl font-bold mb-6 text-center">Jade Valley Monitoring System</h2>
-      
-     
-      
 
       <h2 v-if="!isLoggedIn" class="text-xl font-bold mb-4 text-center">Login</h2>
 
@@ -74,7 +71,6 @@ export default {
       loading: false,
       errorMessage: '',
       debugConsole: '',
-      inactivityTimer: null,
       isLoggedIn: false,
     };
   },
@@ -84,7 +80,6 @@ export default {
     const session = localStorage.getItem('userSession');
     if (session) {
       this.isLoggedIn = true;
-      this.startInactivityTimer();
     }
   },
 
@@ -116,7 +111,7 @@ export default {
           return;
         }
 
-        // Store session and start inactivity timer
+        // Store session and start countdown to redirect
         localStorage.setItem('userSession', JSON.stringify({ email: this.email, timestamp: Date.now() }));
         this.isLoggedIn = true;
         this.debugConsole += `Access granted...\n`;
@@ -129,7 +124,6 @@ export default {
 
         setTimeout(() => {
           this.$router.push('/');
-          this.startInactivityTimer();
         }, 3000);
         
       } catch (error) {
@@ -147,35 +141,10 @@ export default {
       this.$router.push('/login');
     },
 
-    startInactivityTimer() {
-      // Clear existing timer if any
-      clearTimeout(this.inactivityTimer);
-
-      // Set a 2-minute inactivity timer
-      this.inactivityTimer = setTimeout(() => {
-        this.endSession();
-        this.debugConsole += 'Session ended due to inactivity.\n';
-        this.$router.push('/login');
-      }, 2 * 60 * 1000);
-    },
-
-    resetInactivityTimer() {
-      if (this.isLoggedIn) {
-        this.startInactivityTimer();
-      }
-    },
-
     endSession() {
       localStorage.removeItem('userSession');
       this.isLoggedIn = false;
-      clearTimeout(this.inactivityTimer);
     },
-  },
-
-  watch: {
-    // Reset inactivity timer on any interaction (e.g., typing email or password)
-    email: 'resetInactivityTimer',
-    password: 'resetInactivityTimer',
   }
 };
 </script>

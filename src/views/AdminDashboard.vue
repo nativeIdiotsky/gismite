@@ -90,7 +90,7 @@ export default {
       this.inactivityTimer = setTimeout(() => {
         this.endSession();
         this.$router.push('/login');
-      }, 5 * 60 * 1000); //  minutes inactivity timeout
+      }, 5 * 60 * 1000); // 5 minutes inactivity timeout
     },
 
     resetInactivityTimer() {
