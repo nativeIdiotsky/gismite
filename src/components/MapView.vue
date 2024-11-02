@@ -1,7 +1,13 @@
 <template>
+  <div class="absolute top-4 left-4">
+      <button @click="backBtn" class="bg-red-500 text-white px-4 py-2 rounded">Back</button>
+    </div>
   <div class="map-container">
-    <!-- Table displaying markers on the left -->
+    
+   
+    
     <div class="sidebar-left">
+ <br><br>
       <h2>Marker List</h2><br><button @click="addMarker" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full">Add Marker</button>
       <table v-if="markers.length" class="markers-table">
         <thead>
@@ -52,6 +58,7 @@
 
 <script setup>
 import { ref, onMounted, onBeforeUnmount } from 'vue';
+import { useRouter } from 'vue-router'; 
 import 'ol/ol.css';
 import { Map, View, Overlay } from 'ol';
 import TileLayer from 'ol/layer/Tile';
@@ -64,13 +71,19 @@ import Point from 'ol/geom/Point';
 import { supabase } from '../database/supabase';
 import { Style, Text ,Stroke, Fill,Icon } from 'ol/style';
 
-
+const routerBackBtn = useRouter();  
 const markers = ref([]);
 const map = ref(null);
 const overlay = ref(null);
 const vectorSource = new VectorSource();
 const clickedCoordinates = ref({ lat: null, lng: null }); // Store clicked coordinates
 let lastClickedFeature = null;
+
+
+
+const backBtn = () => {
+  routerBackBtn.push('/');
+};
 
 onMounted(async () => {
   map.value = new Map({
@@ -260,6 +273,8 @@ onBeforeUnmount(() => {
     map.value.setTarget(null);
   }
 });
+
+
 </script>
 
 <style>

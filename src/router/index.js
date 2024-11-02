@@ -5,6 +5,7 @@ import LoginPage from '../views/LoginPage.vue';
 import AdminDashboard from '../views/AdminDashboard.vue';
 import AdminRegisterPage from '../views/AdminReg.vue';
 import RestrictedAccess  from '../views/RestrictedAccess.vue';
+import MsgInbox  from '../views/MessageInbox.vue';
 
 import MapView  from '../components/MapView.vue';
 
@@ -34,6 +35,12 @@ const routes = [
     path: '/osm',
     name: 'OSMMap',
     component: MapView,
+  },
+
+   {
+    path: '/msginbox',
+    name: 'Broadcast Messages',
+    component: MsgInbox,
   },
 ];
 

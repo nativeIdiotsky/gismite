@@ -103,7 +103,7 @@ export default {
     },
 
     goToInbox() {
-      this.$router.push('/inbox');
+      this.$router.push('/msginbox');
     },
 
     goToMap() {
