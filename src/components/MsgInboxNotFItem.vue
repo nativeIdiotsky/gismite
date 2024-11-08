@@ -12,17 +12,23 @@
       </span>
     </div>
     <div class="mt-2 flex space-x-2">
+      <button @click="viewNotification(notification)" class="bg-gray-500 text-white px-3 py-1 rounded-md hover:bg-gray-600">
+        View
+      </button>
       <button @click="$emit('edit', notification)" class="bg-blue-500 text-white px-3 py-1 rounded-md hover:bg-blue-600">
         Edit
       </button>
       <button @click="$emit('delete', notification.em_alert_id)" class="bg-red-500 text-white px-3 py-1 rounded-md hover:bg-red-600">
         Delete
       </button>
+      
     </div>
   </li>
 </template>
 
 <script>
+import Swal from 'sweetalert2'; // Import directly from 'sweetalert2'
+
 export default {
   props: ['notification'],
   methods: {
@@ -32,8 +38,26 @@ export default {
         yellow: 'text-yellow-500',
         orange: 'text-orange-500',
         red: 'text-red-500'
-      }[level] || 'text-gray-500'
+      }[level] || 'text-gray-500';
+    },
+    viewNotification(notification) {
+      Swal.fire({
+        title: 'Notification Details',
+        html: `
+          <p><strong>Message:</strong> ${notification.message}</p><br>
+          <p><strong>GIS Level:</strong> ${notification.gismap_link}</p>
+          <p><strong>Redirect link:</strong> ${notification.redirect_link}</p>
+          <p><strong>Gauge Level:</strong> ${notification.warning_gauge_lvl}</p>
+          <p><strong>Status:</strong> ${notification.status_flag ? 'Active' : 'Inactive'}</p>
+        `,
+        
+        confirmButtonText: 'Close'
+      });
     }
   }
 }
 </script>
+
+<style scoped>
+
+</style>

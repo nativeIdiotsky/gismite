@@ -16,7 +16,9 @@
   </div>
 </template>
 
+
 <script>
+import Swal from 'sweetalert2';
 import NotifForm from '../components/AddNewNotifForm.vue';
 import NotifList from '../components/MsgInboxNotFLs.vue';
 import { supabase } from '../database/supabase.js';
@@ -33,7 +35,7 @@ export default {
         gismap_link: '',
         redirect_link: '',
         warning_gauge_lvl: 'green',
-        status_flag: null // Set to null to enforce required selection
+        status_flag: null
       }
     };
   },
@@ -52,21 +54,24 @@ export default {
     },
     async fetchNotifications() {
       const { data, error } = await supabase.from('notifybroadcast').select('*');
-      if (error) console.error('Error fetching notifications:', error);
-      else this.notifications = data;
+      if (error) {
+        console.error('Error fetching notifications:', error);
+        Swal.fire('Error', 'Failed to fetch notifications', 'error');
+      } else {
+        this.notifications = data;
+      }
     },
     async handleSubmit(formData) {
-  // Remove the manual status validation check
-  this.form = { ...formData };
-  if (this.form.em_alert_id) {
-    await this.updateNotification();
-  } else {
-    await this.addNotification();
-  }
-}
-    ,
+      this.form = { ...formData };
+      if (this.form.em_alert_id) {
+        await this.updateNotification();
+      } else {
+        await this.addNotification();
+      }
+    },
     async addNotification() {
       try {
+        // eslint-disable-next-line
         const { data, error } = await supabase.from('notifybroadcast').insert([{
           message: this.form.message,
           gismap_link: this.form.gismap_link,
@@ -77,21 +82,17 @@ export default {
 
         if (error) {
           console.error('Error adding notification:', error);
+          Swal.fire('Error', 'Failed to add notification', 'error');
           return;
         }
 
-        if (!data || data.length === 0) {
-          console.log("CHANGES SAVED");
-        
-          
-        }
-
-        // Refresh the notifications list
+        Swal.fire('Success', 'Notification added successfully', 'success');
         await this.fetchNotifications();
         this.resetForm();
-        this.showForm = false; // Hide the form after submission
+        this.showForm = false;
       } catch (err) {
-        console.error("Unexpected error during addNotification:", err);
+        console.error('Unexpected error during addNotification:', err);
+        Swal.fire('Error', 'An unexpected error occurred', 'error');
       }
     },
     async updateNotification() {
@@ -105,20 +106,39 @@ export default {
 
       if (error) {
         console.error('Error updating notification:', error);
+        Swal.fire('Error', 'Failed to update notification', 'error');
       } else {
-        await this.fetchNotifications(); // Refresh the notifications list after update
+        Swal.fire('Success', 'Notification updated successfully', 'success');
+        await this.fetchNotifications();
       }
 
       this.resetForm();
-      this.showForm = false; // Hide the form after submission
+      this.showForm = false;
     },
     async deleteNotification(em_alert_id) {
-      const { error } = await supabase.from('notifybroadcast').delete().eq('em_alert_id', em_alert_id);
-      if (error) console.error('Error deleting notification:', error);
-      else this.notifications = this.notifications.filter(n => n.em_alert_id !== em_alert_id);
+      Swal.fire({
+        title: 'Are you sure?',
+        text: "This action cannot be undone!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Yes, delete it!'
+      }).then(async (result) => {
+        if (result.isConfirmed) {
+          const { error } = await supabase.from('notifybroadcast').delete().eq('em_alert_id', em_alert_id);
+          if (error) {
+            console.error('Error deleting notification:', error);
+            Swal.fire('Error', 'Failed to delete notification', 'error');
+          } else {
+            Swal.fire('Deleted!', 'Your notification has been deleted.', 'success');
+            this.notifications = this.notifications.filter(n => n.em_alert_id !== em_alert_id);
+          }
+        }
+      });
     },
     editNotification(notification) {
-      this.form = { ...notification, status_flag: notification.status_flag || null }; // Ensure status_flag is null to enforce selection
+      this.form = { ...notification, status_flag: notification.status_flag || null };
       this.showForm = true;
     },
     resetForm() {
@@ -128,9 +148,10 @@ export default {
         gismap_link: '',
         redirect_link: '',
         warning_gauge_lvl: 'green',
-        status_flag: null // Reset to null to enforce required selection
+        status_flag: null
       };
     }
   }
 };
 </script>
+
