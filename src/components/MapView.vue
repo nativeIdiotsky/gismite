@@ -55,10 +55,10 @@
     <div id="popup" style="display: none;"></div>
   </div>
 </template>
-
 <script setup>
-import { ref, onMounted, onBeforeUnmount } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router'; 
+import Swal from 'sweetalert2';
 import 'ol/ol.css';
 import { Map, View, Overlay } from 'ol';
 import TileLayer from 'ol/layer/Tile';
@@ -69,17 +69,16 @@ import VectorSource from 'ol/source/Vector';
 import Feature from 'ol/Feature';
 import Point from 'ol/geom/Point';
 import { supabase } from '../database/supabase';
-import { Style, Text ,Stroke, Fill,Icon } from 'ol/style';
+import { Style, Text, Stroke, Fill, Icon } from 'ol/style';
 
 const routerBackBtn = useRouter();  
 const markers = ref([]);
 const map = ref(null);
 const overlay = ref(null);
 const vectorSource = new VectorSource();
-const clickedCoordinates = ref({ lat: null, lng: null }); // Store clicked coordinates
+const clickedCoordinates = ref({ lat: null, lng: null });
 let lastClickedFeature = null;
-
-
+let markerToEdit = ref(null);
 
 const backBtn = () => {
   routerBackBtn.push('/');
@@ -95,15 +94,6 @@ onMounted(async () => {
     view: new View({ center: fromLonLat([125.593642, 7.109238]), zoom: 16.3 }),
   });
 
-  navigator.geolocation.getCurrentPosition(
-    (position) => {
-      const lat = position.coords.latitude;
-      const lng = position.coords.longitude;
-      map.value.getView().setCenter(fromLonLat([lng, lat]));
-    },
-    () => {}
-  );
-
   overlay.value = new Overlay({
     element: document.getElementById('popup'),
     positioning: 'bottom-center',
@@ -113,7 +103,50 @@ onMounted(async () => {
 
   await fetchMarkers();
 
-  // Event listener for map click to capture coordinates
+  // Event listener for map click to capture coordinates for updating
+  map.value.on('click', (event) => {
+    if (markerToEdit.value) {
+      const [lng, lat] = toLonLat(event.coordinate);
+      clickedCoordinates.value = { lat: lat.toFixed(6), lng: lng.toFixed(6) };
+
+      Swal.fire({
+        title: 'Update Coordinates',
+        text: 'Want to update the coordinates with this new location?',
+        showCancelButton: true,
+        confirmButtonText: 'Update',
+        cancelButtonText: 'Keep old location'
+      }).then(async (result) => {
+        if (result.isConfirmed) {
+          await updateMarkerCoordinates(markerToEdit.value.id, lng, lat);
+          markerToEdit.value = null;
+        }
+      });
+
+      // Create a blue "X" to show the clicked location
+      const clickFeature = new Feature({
+        geometry: new Point(event.coordinate),
+      });
+      clickFeature.setStyle(new Style({
+        text: new Text({
+          text: 'X',
+          font: 'bold 20px "Century Gothic", sans-serif',
+          fill: new Fill({ color: 'blue' }),
+          stroke: new Stroke({ color: 'white', width: 1 }),
+          textAlign: 'center',
+          textBaseline: 'middle',
+          offsetY: 2,
+        }),
+      }));
+
+      // Remove previous clicked feature if it exists
+      if (lastClickedFeature) {
+        vectorSource.removeFeature(lastClickedFeature);
+      }
+      vectorSource.addFeature(clickFeature);
+      lastClickedFeature = clickFeature;
+    }
+    else{
+       // Event listener for map click to capture coordinates
   map.value.on('click', (event) => {
     const [lng, lat] = toLonLat(event.coordinate);
     clickedCoordinates.value = { lat: lat.toFixed(6), lng: lng.toFixed(6) }; 
@@ -121,7 +154,6 @@ onMounted(async () => {
     if (lastClickedFeature) {
       vectorSource.removeFeature(lastClickedFeature);
     }
-
     // Create a new feature for the red dot
     const clickFeature = new Feature({
       geometry: new Point(event.coordinate),
@@ -144,11 +176,9 @@ onMounted(async () => {
     lastClickedFeature = clickFeature;
   });
 
-
-
-
-
-
+      
+    }
+  });
 });
 
 const fetchMarkers = async () => {
@@ -174,17 +204,16 @@ const addMarkersToMap = (markerData) => {
     feature.setStyle(new Style({
       image: new Icon({
         src: require('../components/MarkerIcons/markerIcon.png'),
-        scale: 0.5,              
-        anchor: [0.5, 1],        
+        scale: 0.5,
+        anchor: [0.5, 1],
         anchorXUnits: 'fraction',
-        anchorYUnits: 'fraction', 
+        anchorYUnits: 'fraction',
       })
     }));
 
     vectorSource.addFeature(feature);
   });
 };
-
 
 const formatCoordinates = ([lng, lat]) => `[${lat.toFixed(6)}, ${lng.toFixed(6)}]`;
 
@@ -200,15 +229,28 @@ const showMarkerPopup = (marker) => {
 };
 
 const addMarker = async () => {
-  const markerName = prompt("Enter marker name:");
-  const markerDesc = prompt("Enter marker description:");
-  const center = map.value.getView().getCenter();
-  const coordinates = toLonLat(center);
+  const { value: formValues } = await Swal.fire({
+    title: 'Add Marker',
+    html:
+      '<input id="swal-input1" class="swal2-input" placeholder="Marker Name">' +
+      '<input id="swal-input2" class="swal2-input" placeholder="Marker Description">',
+    focusConfirm: false,
+    preConfirm: () => {
+      return [
+        document.getElementById('swal-input1').value,
+        document.getElementById('swal-input2').value
+      ];
+    }
+  });
 
-  const lng = coordinates[0];
-  const lat = coordinates[1];
+  if (formValues && formValues[0] && formValues[1]) {
+    const [markerName, markerDesc] = formValues;
+    const center = map.value.getView().getCenter();
+    const coordinates = toLonLat(center);
 
-  if (markerName && markerDesc) {
+    const lng = coordinates[0];
+    const lat = coordinates[1];
+
     const { error } = await supabase.from('test_mark_location').insert([{
       marker_name: markerName,
       marker_desc: markerDesc,
@@ -221,18 +263,31 @@ const addMarker = async () => {
       await fetchMarkers();
     }
   } else {
-    alert("Please provide valid data for all fields.");
+    Swal.fire('Error', 'Please provide valid data for all fields.', 'error');
   }
 };
 
 const editMarker = async (marker) => {
-  const newMarkerName = prompt("Enter new marker name:", marker.marker_name);
-  const newMarkerDesc = prompt("Enter new marker description:", marker.marker_desc);
-  const coordinates = marker.marked_loc.coordinates;
-  const lat = coordinates[1];
-  const lng = coordinates[0];
+  const { value: formValues } = await Swal.fire({
+    title: 'Edit Marker',
+    html:
+      `<input id="swal-input1" class="swal2-input" placeholder="Marker Name" value="${marker.marker_name}">` +
+      `<input id="swal-input2" class="swal2-input" placeholder="Marker Description" value="${marker.marker_desc}">`,
+    focusConfirm: false,
+    preConfirm: () => {
+      return [
+        document.getElementById('swal-input1').value,
+        document.getElementById('swal-input2').value
+      ];
+    }
+  });
 
-  if (newMarkerName && newMarkerDesc) {
+  if (formValues && formValues[0] && formValues[1]) {
+    const [newMarkerName, newMarkerDesc] = formValues;
+    const coordinates = marker.marked_loc.coordinates;
+    const lat = coordinates[1];
+    const lng = coordinates[0];
+
     const { error } = await supabase
       .from('test_mark_location')
       .update({
@@ -245,16 +300,39 @@ const editMarker = async (marker) => {
     if (error) {
       console.error("Error updating marker:", error.message);
     } else {
-      await fetchMarkers();
+      markerToEdit.value = marker; // Set the marker to edit
+      Swal.fire('Info', 'Click on the map to update coordinates.', 'info');
     }
   } else {
-    alert("Please provide valid data for all fields.");
+    Swal.fire('Error', 'Please provide valid data for all fields.', 'error');
+  }
+};
+
+const updateMarkerCoordinates = async (id, lng, lat) => {
+  const { error } = await supabase
+    .from('test_mark_location')
+    .update({ marked_loc: `POINT(${lng} ${lat})` })
+    .eq('id', id);
+
+  if (error) {
+    console.error("Error updating coordinates:", error.message);
+  } else {
+    await fetchMarkers();
+    Swal.fire('Success', 'Marker coordinates updated.');
   }
 };
 
 const deleteMarker = async (id) => {
-  const confirmDelete = confirm("Are you sure you want to delete this marker?");
-  if (confirmDelete) {
+  const confirmDelete = await Swal.fire({
+    title: 'Are you sure?',
+    text: 'Delete this marker?',
+    
+    showCancelButton: true,
+    confirmButtonText: 'Yes',
+    cancelButtonText: 'No'
+  });
+
+  if (confirmDelete.isConfirmed) {
     const { error } = await supabase
       .from('test_mark_location')
       .delete()
@@ -264,18 +342,12 @@ const deleteMarker = async (id) => {
       console.error("Error deleting marker:", error.message);
     } else {
       await fetchMarkers();
+      Swal.fire('Deleted!', 'Marker deleted.');
     }
   }
 };
-
-onBeforeUnmount(() => {
-  if (map.value) {
-    map.value.setTarget(null);
-  }
-});
-
-
 </script>
+
 
 <style>
 .map-container {
