@@ -67,6 +67,7 @@ export default {
   data() {
     return {
       email: '',
+      username:'',
       password: '',
       loading: false,
       errorMessage: '',
@@ -95,7 +96,7 @@ export default {
         // Query the registered_users table for the user with the provided email
         const { data, error } = await supabase
           .from('registered_users')
-          .select('email, userpassw')
+          .select('email, username, userpassw')
           .eq('email', this.email)
           .single(); // `.single()` to fetch a single row instead of an array
 
@@ -112,9 +113,9 @@ export default {
         }
 
         // Store session and start countdown to redirect
-        localStorage.setItem('userSession', JSON.stringify({ email: this.email, timestamp: Date.now() }));
+        localStorage.setItem('userSession', JSON.stringify({ email: data.email, username: data.username, timestamp: Date.now() }));
         this.isLoggedIn = true;
-        this.debugConsole += `Access granted...\n`;
+        this.debugConsole += `Access granted for username: ${data.username}\n`;
 
         for (let i = 3; i > 0; i--) {
           setTimeout(() => {
