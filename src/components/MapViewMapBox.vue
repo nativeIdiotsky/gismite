@@ -47,59 +47,44 @@
   </div>
 </template>
 <script setup>
+// filepath: /C:/Users/Administrator/GITHUB/gismite_admin/gismite-admin/src/components/MapViewMapBox.vue
 import { ref, onMounted } from 'vue';
-import { useRouter } from 'vue-router'; 
+import { useRouter } from 'vue-router';
 import Swal from 'sweetalert2';
-import 'ol/ol.css';
-import { Map, View, Overlay } from 'ol';
-import TileLayer from 'ol/layer/Tile';
-import OSM from 'ol/source/OSM';
-import { fromLonLat, toLonLat } from 'ol/proj';
-import VectorLayer from 'ol/layer/Vector';
-import VectorSource from 'ol/source/Vector';
-import Feature from 'ol/Feature';
-import Point from 'ol/geom/Point';
+import 'mapbox-gl/dist/mapbox-gl.css';
+import mapboxgl from 'mapbox-gl';
 import { supabase } from '../database/supabase';
-import { Style, Text, Stroke, Fill, Icon } from 'ol/style';
 
-const routerBackBtn = useRouter();  
-const markers = ref([]);
+mapboxgl.accessToken = 'pk.eyJ1IjoiZ2lzbWl0ZTIwMjQiLCJhIjoiY20wdHF1aXI5MHcyYzJpczV5bTQ5NXU0NiJ9.9nYD6JbfbWwn5tCOY6FjQg';
+
+const router = useRouter();
 const map = ref(null);
-const overlay = ref(null);
-const vectorSource = new VectorSource();
+const markers = ref([]);
 const clickedCoordinates = ref({ lat: null, lng: null });
-let lastClickedFeature = null;
 let markerToEdit = ref(null);
+let lastClickedMarker = null;
 
 const backBtn = () => {
-  routerBackBtn.push('/');
+  router.push('/');
 };
 
 onMounted(async () => {
-  map.value = new Map({
-    target: 'map',
-    layers: [
-      new TileLayer({ source: new OSM() }),
-      new VectorLayer({ source: vectorSource })
-    ],
-    view: new View({ center: fromLonLat([125.593642, 7.109238]), zoom: 16.3 }),
+  map.value = new mapboxgl.Map({
+    container: 'map',
+    style: 'mapbox://styles/mapbox/streets-v11',
+    center: [125.593642, 7.109238],
+    zoom: 16.3,
   });
 
-  overlay.value = new Overlay({
-    element: document.getElementById('popup'),
-    positioning: 'bottom-center',
-    offset: [0, -10],
-  });
-  map.value.addOverlay(overlay.value);
+  map.value.addControl(new mapboxgl.NavigationControl());
 
   await fetchMarkers();
 
-  // Event listener for map click to capture coordinates for updating
   map.value.on('click', (event) => {
-    if (markerToEdit.value) {
-      const [lng, lat] = toLonLat(event.coordinate);
-      clickedCoordinates.value = { lat: lat.toFixed(6), lng: lng.toFixed(6) };
+    const { lng, lat } = event.lngLat;
+    clickedCoordinates.value = { lat: lat.toFixed(6), lng: lng.toFixed(6) };
 
+    if (markerToEdit.value) {
       Swal.fire({
         title: 'Update Coordinates',
         text: 'Want to update the coordinates with this new location?',
@@ -112,62 +97,23 @@ onMounted(async () => {
           markerToEdit.value = null;
         }
       });
-
-      // Create a blue "X" to show the clicked location
-      const clickFeature = new Feature({
-        geometry: new Point(event.coordinate),
-      });
-      clickFeature.setStyle(new Style({
-        text: new Text({
-          text: 'X',
-          font: 'bold 20px "Century Gothic", sans-serif',
-          fill: new Fill({ color: 'blue' }),
-          stroke: new Stroke({ color: 'white', width: 1 }),
-          textAlign: 'center',
-          textBaseline: 'middle',
-          offsetY: 2,
-        }),
-      }));
-
-      // Remove previous clicked feature if it exists
-      if (lastClickedFeature) {
-        vectorSource.removeFeature(lastClickedFeature);
+    } else {
+      // Remove previous clicked marker if it exists
+      if (lastClickedMarker) {
+        lastClickedMarker.remove();
       }
-      vectorSource.addFeature(clickFeature);
-      lastClickedFeature = clickFeature;
-    }
-    else{
-       // Event listener for map click to capture coordinates
-  map.value.on('click', (event) => {
-    const [lng, lat] = toLonLat(event.coordinate);
-    clickedCoordinates.value = { lat: lat.toFixed(6), lng: lng.toFixed(6) }; 
-    // Remove previous clicked dot if it exists
-    if (lastClickedFeature) {
-      vectorSource.removeFeature(lastClickedFeature);
-    }
-    // Create a new feature for the red dot
-    const clickFeature = new Feature({
-      geometry: new Point(event.coordinate),
-    });
 
-    clickFeature.setStyle(new Style({
-    text: new Text({
-    text: 'x',
-    font: 'bold 20px "Century Gothic", sans-serif', // Use Century Gothic, bold, larger size
-    fill: new Fill({ color: 'red' }),       
-    stroke: new Stroke({ color: 'white', width: 1}), // White outline for visibility
-    textAlign: 'center',
-    textBaseline: 'middle',
-    offsetY: 2,
-  }), 
-}));
+      // Create a new marker with a red "X"
+      const el = document.createElement('div');
+      el.className = 'clicked-marker';
+      el.innerHTML = 'X';
+      el.style.color = 'red';
+      el.style.fontSize = '24px';
+      el.style.fontWeight = 'bold';
 
-
-    vectorSource.addFeature(clickFeature);
-    lastClickedFeature = clickFeature;
-  });
-
-      
+      lastClickedMarker = new mapboxgl.Marker(el)
+        .setLngLat([lng, lat])
+        .addTo(map.value);
     }
   });
 });
@@ -183,40 +129,20 @@ const fetchMarkers = async () => {
 };
 
 const addMarkersToMap = (markerData) => {
-  vectorSource.clear();
   markerData.forEach(marker => {
-    const coordinates = fromLonLat(marker.marked_loc.coordinates);
-    const feature = new Feature({
-      geometry: new Point(coordinates),
-      name: marker.marker_name,
-      description: marker.marker_desc,
-    });
-
-    feature.setStyle(new Style({
-      image: new Icon({
-        src: require('../components/MarkerIcons/markerIcon.png'),
-        scale: 0.5,
-        anchor: [0.5, 1],
-        anchorXUnits: 'fraction',
-        anchorYUnits: 'fraction',
-      })
-    }));
-
-    vectorSource.addFeature(feature);
+    const coordinates = marker.marked_loc.coordinates;
+    new mapboxgl.Marker()
+      .setLngLat(coordinates)
+      .setPopup(new mapboxgl.Popup().setHTML(`<h3>${marker.marker_name}</h3><p>${marker.marker_desc}</p>`))
+      .addTo(map.value);
   });
 };
 
 const formatCoordinates = ([lng, lat]) => `[${lat.toFixed(6)}, ${lng.toFixed(6)}]`;
 
 const showMarkerPopup = (marker) => {
-  if (!map.value || !overlay.value || !overlay.value.getElement()) return;
-
-  const coordinates = fromLonLat(marker.marked_loc.coordinates);
-  map.value.getView().setCenter(coordinates);
-
-  const popupContent = `<b>${marker.marker_name}</b><br>${marker.marker_desc}<br>Coordinates: ${formatCoordinates(marker.marked_loc.coordinates)}`;
-  overlay.value.getElement().innerHTML = popupContent;
-  overlay.value.setPosition(coordinates);
+  const coordinates = marker.marked_loc.coordinates;
+  map.value.flyTo({ center: coordinates, zoom: 16.3 });
 };
 
 const addMarker = async () => {
@@ -236,11 +162,9 @@ const addMarker = async () => {
 
   if (formValues && formValues[0] && formValues[1]) {
     const [markerName, markerDesc] = formValues;
-    const center = map.value.getView().getCenter();
-    const coordinates = toLonLat(center);
-
-    const lng = coordinates[0];
-    const lat = coordinates[1];
+    const center = map.value.getCenter();
+    const lng = center.lng;
+    const lat = center.lat;
 
     const { error } = await supabase.from('test_mark_location').insert([{
       marker_name: markerName,
@@ -291,7 +215,7 @@ const editMarker = async (marker) => {
     if (error) {
       console.error("Error updating marker:", error.message);
     } else {
-      markerToEdit.value = marker; // Set the marker to edit
+      markerToEdit.value = marker;
       Swal.fire('Info', 'Click on the map to update coordinates.', 'info');
     }
   } else {
@@ -317,7 +241,6 @@ const deleteMarker = async (id) => {
   const confirmDelete = await Swal.fire({
     title: 'Are you sure?',
     text: 'Delete this marker?',
-    
     showCancelButton: true,
     confirmButtonText: 'Yes',
     cancelButtonText: 'No'
@@ -339,29 +262,27 @@ const deleteMarker = async (id) => {
 };
 </script>
 
-
-<style>
+<style scoped>
 .map-container {
   display: flex;
   flex-direction: row;
   width: 100%;
+  height: 100vh;
 }
 
 .sidebar-left {
   width: 30%;
   padding: 10px;
-
 }
 
-.map-view {
+.map {
   width: 50%;
-  height: 720px;
+  height: 100%;
 }
 
 .sidebar-right {
   width: 15%;
-padding: 15px;
- 
+  padding: 15px;
 }
 
 .markers-table {
@@ -369,23 +290,27 @@ padding: 15px;
   margin-top: 20px;
   border-collapse: collapse;
 }
+
 .markers-table th, .markers-table td {
   border: 1px solid #ddd;
   padding: 5px;
 }
+
 .markers-table th {
   background-color: #f2f2f2;
   text-align: center;
 }
-#popup {
-  background-color: white;
-  padding: 5px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
+
+.back-btn {
   position: absolute;
-  bottom: 12px;
-  left: -50px;
-  min-width: 150px;
-  text-align: center;
+  top: 10px;
+  left: 10px;
+  z-index: 1000;
+  background-color: #fff;
+  padding: 8px 12px;
+  border-radius: 5px;
+  cursor: pointer;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+  font-weight: bold;
 }
 </style>

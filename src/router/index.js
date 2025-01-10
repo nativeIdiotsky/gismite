@@ -8,7 +8,7 @@ import RestrictedAccess  from '../views/RestrictedAccess.vue';
 import MsgInbox  from '../views/MessageInbox.vue';
 
 import MapView  from '../components/MapView.vue';
-
+import MapViewMapBox  from '../components/MapViewMapBox.vue';
 const routes = [
   {
     path: '/',
@@ -36,7 +36,11 @@ const routes = [
     name: 'OSMMap',
     component: MapView,
   },
-
+ {
+    path: '/mapbox',
+    name: 'MapBox',
+    component: MapViewMapBox,
+  },
    {
     path: '/msginbox',
     name: 'Broadcast Messages',

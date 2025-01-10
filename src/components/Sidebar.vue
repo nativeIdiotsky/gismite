@@ -42,7 +42,17 @@
             class="block py-3 pl-3 align-middle text-white no-underline hover:text-white border-b-2 border-gray-800 hover:border-red-500"
           >
             <i class="fa fa-map pr-3"></i>
-            <span class="text-base text-gray-200">Map</span>
+            <span class="text-base text-gray-200">OSM</span>
+          </a>
+        </li>
+        <li class="mb-3">
+          <a
+            href="javascript:void(0)"
+            @click="goToMapBox"
+            class="block py-3 pl-3 align-middle text-white no-underline hover:text-white border-b-2 border-gray-800 hover:border-red-500"
+          >
+            <i class="fa fa-map pr-3"></i>
+            <span class="text-base text-gray-200">MapBox</span>
           </a>
         </li>
       </ul>
@@ -60,6 +70,9 @@ export default {
     },
     goToMap() {
       this.$router.push("/osm");
+    },
+    goToMapBox() {
+      this.$router.push("/mapbox");
     },
     goToCrowdsourcing() {
       this.$router.push("/crowdsourcing");
