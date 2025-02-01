@@ -1,4 +1,9 @@
 <template>
+    <!-- Sidebar -->
+    <Sidebar />
+      <!-- Header -->
+      <Header :username="username" @logout="handleLogout" />
+      <br>
   <div class="absolute top-4 left-4">
     <button @click="backBtn" class="bg-red-500 text-white px-4 py-2 rounded">Back</button>
   </div>
@@ -18,13 +23,15 @@
 
 
 <script>
+import Header from "@/components/Header.vue";
+import Sidebar from "@/components/Sidebar.vue";
 import Swal from 'sweetalert2';
 import NotifForm from '../components/AddNewNotifForm.vue';
 import NotifList from '../components/MsgInboxNotFLs.vue';
 import { supabase } from '../database/supabase.js';
 
 export default {
-  components: { NotifForm, NotifList },
+  components: { NotifForm, NotifList, Header, Sidebar },
   data() {
     return {
       notifications: [],

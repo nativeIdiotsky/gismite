@@ -8,8 +8,8 @@
         <li class="mb-3">
           <a
             href="javascript:void(0)"
-            @click="goToInbox"
-            class="block py-3 pl-3 align-middle text-white no-underline hover:text-white border-b-2 border-blue-600"
+            @click="home"
+            class="block py-3 pl-3 align-middle text-white no-underline hover:text-white border-b-2 border-gray-800 hover:border-green-500"
           >
             <i class="fas fa-inbox pr-3"></i>
             <span class="text-base text-white">Main</span>
@@ -29,7 +29,7 @@
           <a
             href="javascript:void(0)"
             @click="goToCrowdsourcing"
-            class="block py-3 pl-3 align-middle text-white no-underline hover:text-white border-b-2 border-gray-800 hover:border-red-500"
+            class="block py-3 pl-3 align-middle text-white no-underline hover:text-white border-b-2 border-gray-800 hover:border-yellow-500"
           >
             <i class="fa fa-users pr-3"></i>
             <span class="text-base text-gray-200">Crowdsourcing</span>
@@ -39,7 +39,7 @@
           <a
             href="javascript:void(0)"
             @click="goToMap"
-            class="block py-3 pl-3 align-middle text-white no-underline hover:text-white border-b-2 border-gray-800 hover:border-red-500"
+            class="block py-3 pl-3 align-middle text-white no-underline hover:text-white border-b-2 border-gray-800 hover:border-green-500"
           >
             <i class="fa fa-map pr-3"></i>
             <span class="text-base text-gray-200">OSM</span>
@@ -59,7 +59,7 @@
           <a
             href="javascript:void(0)"
             @click="goToDavaoRiverBasin"
-            class="block py-3 pl-3 align-middle text-white no-underline hover:text-white border-b-2 border-gray-800 hover:border-red-500"
+            class="block py-3 pl-3 align-middle text-white no-underline hover:text-white border-b-2 border-gray-800 hover:border-blue-500"
           >
             <i class="fa fa-map pr-3"></i>
             <span class="text-base text-gray-200">Davao River Basin</span>
@@ -75,17 +75,20 @@ export default {
   // eslint-disable-next-line
   name: "Sidebar",
   methods: {
+    home() {
+      this.$router.push("/");
+    },
     goToInbox() {
       this.$router.push("/msginbox");
+    },
+    goToCrowdsourcing() {
+      this.$router.push("/crowdsource");
     },
     goToMap() {
       this.$router.push("/osm");
     },
     goToMapBox() {
       this.$router.push("/mapbox");
-    },
-    goToCrowdsourcing() {
-      this.$router.push("/crowdsourcing");
     },
     goToDavaoRiverBasin() {
       this.$router.push("/riverbasinstatus");

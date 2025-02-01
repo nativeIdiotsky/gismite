@@ -275,9 +275,9 @@ const deleteMarker = async (id) => {
   padding: 10px;
 }
 
-.map {
-  width: 50%;
-  height: 100%;
+#map {
+  width: 70%;
+  height: 70%;
 }
 
 .sidebar-right {

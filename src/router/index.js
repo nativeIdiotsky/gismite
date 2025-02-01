@@ -6,7 +6,7 @@ import AdminDashboard from '../views/AdminDashboard.vue';
 import AdminRegisterPage from '../views/AdminReg.vue';
 import RestrictedAccess  from '../views/RestrictedAccess.vue';
 import MsgInbox  from '../views/MessageInbox.vue';
-
+import Crowdsource  from '../views/CrowdsourcingMgmt.vue';
 import MapView  from '../components/MapView.vue';
 import MapViewMapBox  from '../components/MapViewMapBox.vue';
 import DavaoRiverBasin from '../components/RiverBasinInfo.vue';
@@ -31,7 +31,11 @@ const routes = [
     name: 'Restricted',
     component: RestrictedAccess,
   },
- 
+  {
+    path: '/crowdsource',
+    name: 'Crowdsource',
+    component: Crowdsource,
+  },
   {
     path: '/osm',
     name: 'OSMMap',
