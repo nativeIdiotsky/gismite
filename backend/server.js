@@ -1,17 +1,57 @@
-const express = require("express");
-const axios = require("axios");
+
+
+
+
+const express = require('express');
+const { createProxyMiddleware } = require('http-proxy-middleware');
 const app = express();
 
-app.get("/api/flood-data", async (req, res) => {
-  try {
-    const url = "http://localhost:3000/api/flood-data";
-    const response = await axios.get(url);
-    res.send(response.data);
-  } catch (error) {
-    res.status(500).send("Error fetching data");
-  }
+
+// Enhanced Proxy Middleware
+const apiProxy = createProxyMiddleware({
+  target: 'https://www.pagasa.dost.gov.ph',
+  changeOrigin: true,
+  secure: false, // Add this to handle HTTPS
+  pathRewrite: {
+    '^/api': '', // Removes the /api prefix
+  },
+  onProxyReq: (proxyReq, req, res) => {
+    proxyReq.setHeader('User-Agent', 'My-Proxy-Server');
+  },
+  onError: (err, req, res) => {
+    console.error('Proxy Error:', err);
+    res.status(500).json({ error: 'Proxy server error.' });
+  },
 });
 
-app.listen(3000, () => {
-  console.log("Server running on port 3000");
+app.use((req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  next();
+});
+
+// Use the proxy for API routes
+app.use('/api', apiProxy);
+
+app.options('*', (req, res) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.sendStatus(200);
+});
+// Serve static files if you have a frontend
+app.use(express.static('dist'));
+
+// Start the server
+const port = process.env.PORT || 2120;
+app.listen(port, () => {
+  console.log(`Proxy server listening on port ${port}`);
+});
+
+process.on('warning', (warning) => {
+  if (warning.code === 'DEP0060') {
+    return; // Ignore this specific warning
+  }
+  console.warn(warning.name, warning.message); // Show other warnings
 });

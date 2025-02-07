@@ -69,6 +69,69 @@
 </template>
 
 
+<style scoped>
+.dashboard {
+  display: flex;
+  background: linear-gradient(to bottom right, #f3f4f6, #e5e7eb);
+}
+
+/* Sidebar spacing */
+.ml-48 {
+  margin-left: 12rem;
+}
+
+/* Map View Styling */
+.map-container {
+  display: grid;
+  grid-template-columns: 3fr 6fr 3fr;
+  gap: 20px;
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Left Sidebar */
+.sidebar-left {
+  background: #f9fafb;
+  padding: 15px;
+  border-radius: 10px;
+  height: 100%;
+}
+
+/* Right Sidebar */
+.sidebar-right {
+  background: #f9fafb;
+  padding: 15px;
+  border-radius: 10px;
+}
+
+/* Map */
+.map-view {
+  height: 500px;
+  border-radius: 12px;
+}
+
+/* Table Styling */
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th, td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: center;
+}
+
+th {
+  background: #f3f4f6;
+}
+
+button {
+  transition: all 0.3s ease-in-out;
+}
+</style>
 
 
 <script setup>

@@ -1,54 +1,156 @@
 <template>
-  <div >
-    <button @click="backBtn" class="bg-red-500 text-white px-4 py-2 rounded">Back</button>
-  </div>
-  <div class="map-container">
-    <div class="sidebar-left">
-      <h2 class="text-lg font-bold mb-4">Marker List</h2>
-      <button @click="addMarker" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full mb-4">Add Marker</button>
-      <table v-if="markers.length" class="markers-table">
-        <thead>
-          <tr>
-            <th>Marker Name</th>
-            <th>Coordinates [x, y]</th>
-            <th>Description</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="marker in markers" :key="marker.id" @click="showMarkerPopup(marker)">
-            <td>{{ marker.marker_name }}</td>
-            <td>{{ formatCoordinates(marker.marked_loc.coordinates) }}</td>
-            <td>{{ marker.marker_desc }}</td>
-            <td>
-              <div class="inline-flex">
-                <button @click="editMarker(marker)" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-l">Edit</button>
-                <button @click="deleteMarker(marker.id)" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-r">Delete</button>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-      <p v-else class="text-gray-500">No markers available. Click "Add Marker" to create one.</p>
+  <div class="dashboard relative">
+    <!-- Header -->
+    <Header :username="username" @logout="handleLogout" />
+
+    <!-- Sidebar -->
+    <Sidebar />
+
+    <!-- Main Content -->
+    <div class="ml-48 pt-10 p-6">
+      <h1 class="text-2xl font-bold mb-4 text-center">Map View</h1>
+
+      <!-- Back Button -->
+      <div class="absolute top-4 left-4">
+        <button @click="backBtn" class="bg-red-500 text-white px-4 py-2 rounded">Back</button>
+      </div>
+
+      <div class="map-container bg-white p-6 rounded-lg shadow-md">
+        <!-- Left Sidebar - Marker List -->
+        <div class="sidebar-left">
+          <h2 class="text-lg font-bold mb-4">Marker List</h2>
+          <button
+            @click="addMarker"
+            class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full mb-4"
+          >
+            Add Marker
+          </button>
+          <table v-if="markers.length" class="markers-table">
+            <thead>
+              <tr>
+                <th>Marker Name</th>
+                <th>Coordinates [x, y]</th>
+                <th>Description</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="marker in markers" :key="marker.id" @click="showMarkerPopup(marker)">
+                <td>{{ marker.marker_name }}</td>
+                <td>{{ formatCoordinates(marker.marked_loc.coordinates) }}</td>
+                <td>{{ marker.marker_desc }}</td>
+                <td>
+                  <div class="inline-flex">
+                    <button @click="editMarker(marker)" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-l">Edit</button>
+                    <button @click="deleteMarker(marker.id)" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-r">Delete</button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <p v-else class="text-gray-500">No markers available. Click "Add Marker" to create one.</p>
+        </div>
+
+        <!-- Map Container in the Center -->
+        <div id="map" class="map-view"></div>
+
+        <!-- Right Sidebar - Coordinates Display -->
+        <div class="sidebar-right col-span-3 bg-gray-100 p-4 rounded-lg">
+          <h2 class="text-lg font-bold mb-2">📍 Coordinates</h2>
+          <p class="text-sm text-gray-600">Latitude (x): <span class="font-semibold">{{ clickedCoordinates.lat }}</span></p>
+          <p class="text-sm text-gray-600">Longitude (y): <span class="font-semibold">{{ clickedCoordinates.lng }}</span></p>
+        </div>
+
+        <!-- Popup Element -->
+        <div id="popup" style="display: none;"></div>
+      </div>
     </div>
-
-    <!-- Map Container in the center -->
-    <div id="map" class="map-view"></div>
-
-    <!-- Display Coordinates on the right -->
-    <div class="sidebar-right">
-      <h2 class="text-lg font-bold mb-2">Coordinates</h2>
-      <p>Latitude (x): {{ clickedCoordinates.lat }}</p>
-      <p>Longitude (y): {{ clickedCoordinates.lng }}</p>
-    </div>
-
-    <!-- Popup Element for displaying information -->
-    <div id="popup" style="display: none;"></div>
   </div>
 </template>
+
+<style scoped>
+.dashboard {
+  display: flex;
+  background: linear-gradient(to bottom right, #f3f4f6, #e5e7eb);
+}
+
+/* Sidebar spacing */
+.ml-48 {
+  margin-left: 12rem;
+}
+
+/* Map View Styling */
+.map-container {
+  display: grid;
+  grid-template-columns: 3fr 6fr 3fr;
+  gap: 20px;
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Left Sidebar */
+.sidebar-left {
+  background: #f9fafb;
+  padding: 15px;
+  border-radius: 10px;
+  height: 100%;
+}
+
+/* Right Sidebar */
+.sidebar-right {
+  background: #f9fafb;
+  padding: 15px;
+  border-radius: 10px;
+}
+
+/* Map */
+.map-view {
+  height: 500px;
+  border-radius: 12px;
+}
+
+/* Table Styling */
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th, td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: center;
+}
+
+th {
+  background: #f3f4f6;
+}
+
+button {
+  transition: all 0.3s ease-in-out;
+}
+</style>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 <script setup>
 // filepath: /C:/Users/Administrator/GITHUB/gismite_admin/gismite-admin/src/components/MapViewMapBox.vue
 import { ref, onMounted } from 'vue';
+import Header from "@/components/Header.vue";
+// eslint-disable-next-line
+import Sidebar from "@/components/Sidebar.vue";
 import { useRouter } from 'vue-router';
 import Swal from 'sweetalert2';
 import 'mapbox-gl/dist/mapbox-gl.css';
@@ -60,6 +162,7 @@ mapboxgl.accessToken = 'pk.eyJ1IjoiZ2lzbWl0ZTIwMjQiLCJhIjoiY20wdHF1aXI5MHcyYzJpc
 const router = useRouter();
 const map = ref(null);
 const markers = ref([]);
+const username = ref("");
 const clickedCoordinates = ref({ lat: null, lng: null });
 let markerToEdit = ref(null);
 let lastClickedMarker = null;
@@ -69,6 +172,12 @@ const backBtn = () => {
 };
 
 onMounted(async () => {
+  const session = localStorage.getItem("userSession");
+  if (!session) {
+    useRouter.push("/login");
+  } else {
+    username.value = JSON.parse(session).username || "Admin";
+  }
   map.value = new mapboxgl.Map({
     container: 'map',
     style: 'mapbox://styles/mapbox/streets-v11',
@@ -261,56 +370,3 @@ const deleteMarker = async (id) => {
   }
 };
 </script>
-
-<style scoped>
-.map-container {
-  display: flex;
-  flex-direction: row;
-  width: 100%;
-  height: 100vh;
-}
-
-.sidebar-left {
-  width: 30%;
-  padding: 10px;
-}
-
-#map {
-  width: 70%;
-  height: 70%;
-}
-
-.sidebar-right {
-  width: 15%;
-  padding: 15px;
-}
-
-.markers-table {
-  width: 100%;
-  margin-top: 20px;
-  border-collapse: collapse;
-}
-
-.markers-table th, .markers-table td {
-  border: 1px solid #ddd;
-  padding: 5px;
-}
-
-.markers-table th {
-  background-color: #f2f2f2;
-  text-align: center;
-}
-
-.back-btn {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  z-index: 1000;
-  background-color: #fff;
-  padding: 8px 12px;
-  border-radius: 5px;
-  cursor: pointer;
-  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
-  font-weight: bold;
-}
-</style>

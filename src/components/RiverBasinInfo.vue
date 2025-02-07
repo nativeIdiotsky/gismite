@@ -24,9 +24,10 @@
         <div class="mt-4">
           <div v-if="isLoading" class="text-center">
             <div class="spinner-border text-primary" role="status">
-              <span class="visually-hidden">Loading...</span>
+              
             </div>
-            <p>Loading flood alerts...</p>
+            <pre v-if="response">{{ response }}</pre>
+            <span class="visually-hidden">Loading flood alerts...</span>
           </div>
 
           <div v-else>
@@ -38,9 +39,12 @@
               >
                 <i class="bi bi-exclamation-triangle-fill text-danger me-3"></i>
                 <span>{{ alert }}</span>
+                
               </li>
               <li v-if="floodAlerts.length === 0" class="list-group-item text-muted">
                 No flood alerts available.
+                <span>{{ response }}</span>
+                {{ response }}
               </li>
             </ul>
           </div>
@@ -55,9 +59,14 @@
 </template>
 
 <script>
+
 import axios from "axios";
 import Header from "@/components/Header.vue";
 import Sidebar from "@/components/Sidebar.vue";
+
+
+
+
 
 export default {
   name: "RiverBasinInfo",
@@ -70,6 +79,7 @@ export default {
       username: "",
       floodAlerts: [],
       isLoading: true,
+      response:null,
     };
   },
   mounted() {
@@ -83,31 +93,33 @@ export default {
   },
   methods: {
     async fetchFloodData() {
-      this.isLoading = true;
-      try {
-        const url =
-          "https://cors-anywhere.herokuapp.com/https://www.pagasa.dost.gov.ph/flood/davao";
-        const response = await axios.get(url);
+  this.isLoading = true;
+  try {
+    const url = "http://localhost:2120/api/flood/davao";
+    console.log("Fetching data from:", url);
+    const response = await axios.get(url);
+    this.response = response.data; 
+   // console.log("Response:", response.data); // Debug line
 
-        if (response.status === 200) {
-          const parser = new DOMParser();
-          const doc = parser.parseFromString(response.data, "text/html");
-          const alertElements = doc.querySelectorAll(
-            "body > div.container-fluid.container-space > div.row.basin-page"
-          );
+    if (response.status === 200) {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(response.data, "text/html");
+      // Adjust selector based on actual structure of the page
+      const alertElements = doc.querySelectorAll("h2, p, .alert, .warning");
 
-          this.floodAlerts = Array.from(alertElements).map((el) =>
-            el.textContent.trim()
-          );
-        } else {
-          this.floodAlerts = ["Failed to fetch data."];
-        }
-      } catch (error) {
-        this.floodAlerts = [`Error: ${error.message}`];
-      } finally {
-        this.isLoading = false;
-      }
-    },
+      this.floodAlerts = Array.from(alertElements).map((el) =>
+        el.textContent.trim()
+      );
+    } else {
+      this.floodAlerts = ["Failed to fetch data."];
+    }
+  } catch (error) {
+    console.error("Error:", error); // Debug line
+    this.floodAlerts = [`Error: ${error.message}`];
+  } finally {
+    this.isLoading = false;
+  }
+},
     handleLogout() {
       localStorage.removeItem("userSession");
       this.$router.push("/login");
